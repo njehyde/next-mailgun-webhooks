@@ -12,9 +12,10 @@ const eventSchema = new mongoose.Schema({
 });
 const Event = mongoose.model('Event', eventSchema);
 
-export default (req, res) => {
+export default async (req, res) => {
 
-  mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
+  const test = await mongoose.connect(mongoDB, { useNewUrlParser: true, useUnifiedTopology: true });
+  console.log({test});
 
   const db = mongoose.connection;
   db.on('error', console.error.bind(console, 'connection error:'));
@@ -52,10 +53,28 @@ export default (req, res) => {
     const { 'message-id': messageId, to, from, subject } = headers || {};
 
     const event = new Event({ messageId, to, from, subject });
-    event.save(function (err, event) {
-      if (err) return console.error(err);
-    });
+    // event.save(function (err, event) {
+    //   if (err) return console.error(err);
+    // });
+
+    // const promise = await event.save();
+
+    let saveEvent = null;
+    try {
+      const newEvent = new Event({ messageId, to, from, subject });
+      console.log('before save');
+      saveEvent = await newEvent.save(); //when fail its goes to catch
+      console.log(saveEvent); //when success it print.
+      console.log('after save');
+    } catch (err) {
+      console.log('err' + err);
+      res.status(500).send(err);
+    }
+
+    res.status(200).json({ success: true, event: saveEvent });
+  } else {
+    res.status(200).json({ success: false });
   }
 
-  res.status(200).json({ success: result });
+  // res.status(200).json({ success: result, test: promise });
 }
